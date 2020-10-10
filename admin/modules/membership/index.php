@@ -687,14 +687,16 @@ $(document).ready(function() {
         $datagrid->setSQLColumn('m.member_id',
             'm.member_id AS \''.__('Member ID').'\'',
             'm.member_name AS \''.__('Member Name').'\'',
-            'mt.member_type_name AS \''.__('Membership Type').'\'',
+            'm.inst_name AS \''.__('Instititution').'\'', //edited by: awriel@smkn1bawang.sch.id
+            //'mt.member_type_name AS \''.__('Membership Type').'\'',
             'm.member_email AS \''.__('E-mail').'\'',
             'm.last_update AS \''.__('Last Updated').'\'');
             $datagrid->modifyColumnContent(2, 'callback{showMemberImage}');
     } else {
         $datagrid->setSQLColumn('m.member_id AS \''.__('Member ID').'\'',
             'm.member_name AS \''.__('Member Name').'\'',
-            'mt.member_type_name AS \''.__('Membership Type').'\'',
+            'm.inst_name AS \''.__('Instititution').'\'', //edited by: awriel@smkn1bawang.sch.id
+            //'mt.member_type_name AS \''.__('Membership Type').'\'',
             'm.member_email AS \''.__('E-mail').'\'',
             'm.last_update AS \''.__('Last Updated').'\'');
             $datagrid->modifyColumnContent(1, 'callback{showMemberImage}');
