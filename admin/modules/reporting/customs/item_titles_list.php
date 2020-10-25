@@ -78,6 +78,18 @@ if (!$reportView) {
                     <label><?php echo __('Classification'); ?></label>
                     <?php echo simbio_form_element::textField('text', 'class', '', 'class="form-control col-4"'); ?>
                 </div>
+                <div class="divRow">
+                    <div class="divRowLabel"><?php echo __('Received Date From'); ?></div>
+                    <div class="divRowContent">
+                    <?php echo simbio_form_element::dateField('startDate', '1992-01-01'); ?>
+                </div>
+                </div>
+                <div class="divRow">
+                <div class="divRowLabel"> <?php echo __('Received Date Until'); ?></div>
+                <div class="divRowContent">
+                <?php echo simbio_form_element::dateField('untilDate', date('Y-m-d')); ?>
+                </div>
+                </div>
                 <div class="form-group divRow">
                     <label><?php echo __('GMD'); ?></label>
                     <?php
@@ -157,6 +169,7 @@ if (!$reportView) {
     $reportgrid->setSQLColumn('i.item_code AS \''.__('Item Code').'\'',
         'b.title AS \''.__('Title').'\'',
         'ct.coll_type_name AS \''.__('Collection Type').'\'',
+        'i.received_date AS \''.__('Received Date').'\'',
         'i.item_status_id AS \''.__('Item Status').'\'',
         'b.call_number AS \''.__('Call Number').'\'', 'i.biblio_id');
     $reportgrid->setSQLorder('b.title ASC');
@@ -213,14 +226,21 @@ if (!$reportView) {
         $status = $dbs->escape_string(trim($_GET['status']));
         $criteria .= ' AND i.item_status_id=\''.$status.'\'';
     }
+    //Classification
     if (isset($_GET['class']) AND ($_GET['class'] != '')) {
         $class = $dbs->escape_string($_GET['class']);
         $criteria .= ' AND b.classification LIKE \''.$class.'%\'';
+    }
+    //Received Date
+    if (isset($_GET['startDate']) AND isset($_GET['untilDate'])) {
+        $criteria .= ' AND (TO_DAYS(i.received_date) BETWEEN TO_DAYS(\''.$_GET['startDate'].'\') AND
+            TO_DAYS(\''.$_GET['untilDate'].'\'))';
     }
     if (isset($_GET['location']) AND !empty($_GET['location'])) {
         $location = $dbs->escape_string(trim($_GET['location']));
         $criteria .= ' AND i.location_id=\''.$location.'\'';
     }
+    //Publish Year
     if (isset($_GET['publishYear']) AND !empty($_GET['publishYear'])) {
         $publish_year = $dbs->escape_string(trim($_GET['publishYear']));
         $criteria .= ' AND b.publish_year LIKE \'%'.$publish_year.'%\'';
@@ -235,14 +255,14 @@ if (!$reportView) {
     // callback function to show title and authors
     function showTitleAuthors($obj_db, $array_data)
     {
-        if (!$array_data[5]) {
+        if (!$array_data[6]) {
             return;
         }
         // author name query
         $_biblio_q = $obj_db->query('SELECT b.title, a.author_name FROM biblio AS b
             LEFT JOIN biblio_author AS ba ON b.biblio_id=ba.biblio_id
             LEFT JOIN mst_author AS a ON ba.author_id=a.author_id
-            WHERE b.biblio_id='.$array_data[5]);
+            WHERE b.biblio_id='.$array_data[6]);
         $_authors = '';
         while ($_biblio_d = $_biblio_q->fetch_row()) {
             $_title = $_biblio_d[0];
@@ -255,7 +275,7 @@ if (!$reportView) {
     function showStatus($obj_db, $array_data)
     {
         $output = __('Available');
-        $q = $obj_db->query('SELECT item_status_name FROM mst_item_status WHERE item_status_id=\''.$array_data[3].'\'');
+        $q = $obj_db->query('SELECT item_status_name FROM mst_item_status WHERE item_status_id=\''.$array_data[4].'\'');
         if(!empty($q->num_rows)){
             $d = $q->fetch_row();
             $s = $d[0];
@@ -266,8 +286,8 @@ if (!$reportView) {
     }
     // modify column value
     $reportgrid->modifyColumnContent(1, 'callback{showTitleAuthors}');
-    $reportgrid->modifyColumnContent(3, 'callback{showStatus}');
-    $reportgrid->invisible_fields = array(5);
+    $reportgrid->modifyColumnContent(4, 'callback{showStatus}');
+    $reportgrid->invisible_fields = array(6);
 
     // put the result into variables
     echo $reportgrid->createDataGrid($dbs, $table_spec, $num_recs_show);

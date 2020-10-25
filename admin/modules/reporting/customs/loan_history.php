@@ -74,7 +74,7 @@ if (!$reportView) {
         <div class="form-group divRow">
             <label><?php echo __('Institution'); ?></label>
             <?php
-            echo simbio_form_element::textField('text', 'inst_name', '', 'class="form-control col-5"');
+            echo simbio_form_element::textField('text', 'inst_name', '', 'class="form-control col-2"');
             ?>
         </div>
         <div class="form-group divRow">
@@ -96,7 +96,7 @@ if (!$reportView) {
         <div class="form-group divRow">
             <label><?php echo __('Item Code'); ?></label>
             <?php
-            echo simbio_form_element::textField('text', 'itemCode', '', 'class="form-control col-5"');
+            echo simbio_form_element::textField('text', 'itemCode', '', 'class="form-control col-3"');
             ?>
         </div>
         <div class="form-group divRow">
@@ -145,6 +145,7 @@ if (!$reportView) {
 } else {
     ob_start();
     // table spec
+    //$table_spec = 'loan_history';
     $table_spec = 'loan_history AS lh
                    LEFT JOIN member AS m ON lh.member_id=m.member_id';
 

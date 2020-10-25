@@ -68,10 +68,15 @@ if (!$reportView) {
     <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
         <div id="filterForm">
             <div class="form-group divRow">
-                <label><?php echo __('Member ID').'/'.__('Member Name'); ?></label>
+	            <label><?php echo __('Member ID').' / '.__('Member Name'); ?></label>
                 <?php echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control col-4"'); ?>
             </div>
-
+        <div class="form-group divRow">
+            <label><?php echo __('Institution'); ?></label>
+            <?php
+            echo simbio_form_element::textField('text', 'inst_name', '', 'class="form-control col-2"');
+            ?>
+        </div>
             <div class="form-group divRow">
             <label><?php echo __('Membership Type'); ?></label>
             <div class="divRowContent">
@@ -141,6 +146,11 @@ if (!$reportView) {
             $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%'";
         }
     }
+    //Institution
+    if (isset($_GET['inst_name']) AND !empty($_GET['inst_name'])) {
+        $inst_name = utility::filterData('inst_name', 'get', true, true, true);
+        $overdue_criteria .= ' AND m.inst_name LIKE \'%'.$inst_name.'%\'';
+    }
     // loan date
     if (isset($_GET['startDate']) AND isset($_GET['untilDate'])) {
         $date_criteria = ' AND (TO_DAYS(l.loan_date) BETWEEN TO_DAYS(\''.$_GET['startDate'].'\') AND
@@ -170,7 +180,7 @@ if (!$reportView) {
         global $date_criteria;
 
         // member name
-        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone FROM member WHERE member_id=\''.$array_data[0].'\'');
+        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, inst_name FROM member WHERE member_id=\''.$array_data[0].'\'');
         $member_d = $member_q->fetch_row();
         $member_name = $member_d[0];
         unset($member_q);
@@ -181,7 +191,7 @@ if (!$reportView) {
                 LEFT JOIN item AS i ON l.item_code=i.item_code
                 LEFT JOIN biblio AS b ON i.biblio_id=b.biblio_id
             WHERE (l.is_lent=1 AND l.is_return=0) AND l.member_id=\''.$array_data[0].'\''.( !empty($date_criteria)?$date_criteria:'' ));
-        $_buffer = '<div class="font-weight-bold">'.$member_name.' ('.$array_data[0].')<br>';
+        $_buffer = '<div class="font-weight-bold">'.$array_data[0] . ' - ' . $member_name . ' - '  . $member_d[3].' <br>';
         $_buffer .= ''.__('E-mail').': <a href="mailto:'.$member_d[1].'">'.$member_d[1].'</a> - '.__('Phone Number').': '.$member_d[2].'</div>';
         $_buffer .= '<table width="100%" cellspacing="0">';
         while ($ovd_title_d = $ovd_title_q->fetch_assoc()) {
