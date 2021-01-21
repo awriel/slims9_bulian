@@ -20,6 +20,7 @@
 
 
 /* Item Management section */
+/* modified by heru 2018 */
 
 // key to authenticate
 if (!defined('INDEX_AUTH')) {
@@ -62,24 +63,32 @@ if (isset($_GET['inPopUp'])) {
 
 /* RECORD OPERATION */
 if (isset($_POST['saveData']) AND $can_read AND $can_write) {
-    $itemCode = trim(strip_tags($_POST['itemCode']));
-    if (empty($itemCode)) {
-        utility::jsToastr('Item', __('Item Code can\'t be empty!'), 'error');
+	$arr_itemCode = $_POST['itemCode'];
+	$err = 0;
+	foreach ($arr_itemCode as $key) {
+		if($key==''){ $err = $err+1; }
+	}
+
+    if ($err > 0) {
+        utility::jsAlert(__('Item Code can\'t be empty!'.json_encode($_POST['inventoryCode'])));
         exit();
     } else {
         // biblio title
         $title = trim($_POST['biblioTitle']);
         $data['biblio_id'] = $_POST['biblioID'];
-        $data['item_code'] = $dbs->escape_string($itemCode);
         $data['call_number'] = trim($dbs->escape_string($_POST['callNumber']));
         // check inventory code
+        /* 
         $inventoryCode = trim($_POST['inventoryCode']);
         if ($inventoryCode) {
             $data['inventory_code'] = $inventoryCode;
         } else {
             $data['inventory_code'] = 'literal{NULL}';
         }
+        */
 
+		$data['item_code'] = $dbs->escape_string($_POST['itemCode'][0]);
+		$data['inventory_code'] = $dbs->escape_string($_POST['inventoryCode'][0]);
         $data['location_id'] = $_POST['locationID'];
         $data['site'] = trim($dbs->escape_string(strip_tags($_POST['itemSite'])));
         $data['coll_type_id'] = intval($_POST['collTypeID']);
@@ -93,7 +102,7 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
         $data['invoice_date'] = $_POST['invcDate'];
         $data['price_currency'] = trim($dbs->escape_string(strip_tags($_POST['priceCurrency'])));
         if (!$data['price_currency']) { $data['price_currency'] = 'literal{NULL}'; }
-        $data['price'] = preg_replace('@[.,\-a-z ]@i', '', strip_tags($_POST['price']));
+        $data['price'] = preg_replace('@[,\-a-z ]@i', '', strip_tags($_POST['price']));
         $data['input_date'] = date('Y-m-d H:i:s');
         $data['last_update'] = date('Y-m-d H:i:s');
         $data['uid'] = $_SESSION['uid'];
@@ -111,9 +120,9 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
             $update = $sql_op->update('item', $data, "item_id=".$updateRecordID);
             if ($update) {
                 // write log
-                utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' update item data ('.$data['item_code'].') with title ('.$title.')', 'Item', 'Update');
+                utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' update item data ('.$data['item_code'].') with title ('.$title.')');
                 if ($sysconf['bibliography_item_update_notification']) {
-                    utility::jsToastr('Item', __('Item Data Successfully Updated'), 'success');
+                    utility::jsAlert(__('Item Data Successfully Updated'));
 			    }
                 if ($in_pop_up) {
                     echo '<script type="text/javascript">top.setIframeContent(\'itemIframe\', \''.MWB.'bibliography/iframe_item_list.php?biblioID='.$data['biblio_id'].'\');</script>';
@@ -121,23 +130,42 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
                 } else {
                     echo '<script type="text/javascript">parent.$(\'#mainContent\').simbioAJAX(parent.jQuery.ajaxHistory[0].url);</script>';
                 }
-            } else { utility::jsToastr('Item', __('Item Data FAILED to Save. Please Contact System Administrator')."\nDEBUG : ".$sql_op->error, 'error'); }
+            } else { utility::jsAlert(__('Item Data FAILED to Save. Please Contact System Administrator')."\nDEBUG : ".$sql_op->error); }
             exit();
         } else {
+
             /* INSERT RECORD MODE */
             // insert the data
-            $insert = $sql_op->insert('item', $data);
+            $inventoryList = 0;
+			foreach ($arr_itemCode as $key) {
+				//count
+				if(isset($_POST['count_items'])){
+					$item_count = $dbs->query("SELECT item_code FROM item WHERE biblio_id=".$data['biblio_id']);
+					$count_result = $item_count->num_rows;
+					$items = $count_result+1;
+					$data['call_number'] = trim($dbs->escape_string($_POST['callNumber'])).' c.'.$items;
+				}
+				$data['item_code'] = $dbs->escape_string($key);
+				$data['inventory_code'] = $dbs->escape_string($_POST['inventoryCode'][$inventoryList]);
+		        $insert = $sql_op->insert('item', $data);
+		        $count = 0;
+		        if($insert){ 
+		        	utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' insert item data ('.$data['item_code'].') with title ('.$title.')');
+		        	$count = $count+1;
+		        }
+		        $inventoryList++;
+			}
+
             if ($insert) {
-                // write log
-                utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' insert item data ('.$data['item_code'].') with title ('.$title.')', 'Item', 'Add');
-                utility::jsToastr('Item', __('New Item Data Successfully Saved'), 'success');
+                // write loq
+                utility::jsAlert(__($count.' New Item Data Successfully Saved'));
                 if ($in_pop_up) {
                     echo '<script type="text/javascript">top.setIframeContent(\'itemIframe\', \''.MWB.'bibliography/iframe_item_list.php?biblioID='.$data['biblio_id'].'\');</script>';
                     echo '<script type="text/javascript">top.jQuery.colorbox.close();</script>';
                 } else {
                     echo '<script type="text/javascript">parent.$(\'#mainContent\').simbioAJAX(\''.$_SERVER['PHP_SELF'].'\');</script>';
                 }
-            } else { utility::jsToastr('Item', __('Item Data FAILED to Save. Please Contact System Administrator')."\nDEBUG : ".$sql_op->error, 'error'); }
+            } else { utility::jsAlert(__('Item Data FAILED to Save. Please Contact System Administrator')."\nDEBUG : ".$sql_op->error); }
             exit();
         }
     }
@@ -171,7 +199,7 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
                 $error_num++;
             } else {
                 // write log
-                utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' DELETE item data ('.$loan_d[0].') with title ('.$loan_d[1].')', 'Item', 'Delete');
+                utility::writeLogs($dbs, 'staff', $_SESSION['uid'], 'bibliography', $_SESSION['realname'].' DELETE item data ('.$loan_d[0].') with title ('.$loan_d[1].')');
             }
         } else {
             $still_on_loan[] = $loan_d[0].' - '.$loan_d[1];
@@ -184,16 +212,16 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
         foreach ($still_on_loan as $item) {
             $items .= $item."\n";
         }
-        utility::jsToastr('Item on Hold', __('Item data can not be deleted because still on hold by members')." : \n".$items, 'error');
+        utility::jsAlert(__('Item data can not be deleted because still on hold by members')." : \n".$items);
         echo '<script type="text/javascript">parent.$(\'#mainContent\').simbioAJAX(\''.$_SERVER['PHP_SELF'].'?'.$_POST['lastQueryStr'].'\');</script>';
         exit();
     }
     // error alerting
     if ($error_num == 0) {
-        utility::jsToastr('Item', __('Item succesfully removed!'), 'success');
+        utility::jsAlert(__('Item succesfully removed!'));
         echo '<script type="text/javascript">parent.$(\'#mainContent\').simbioAJAX(\''.$_SERVER['PHP_SELF'].'?'.$_POST['lastQueryStr'].'\');</script>';
     } else {
-        utility::jsToastr('Item', __('Item FAILED to removed!'), 'error');
+        utility::jsAlert(__('Item FAILED to removed!'));
         echo '<script type="text/javascript">parent.$(\'#mainContent\').simbioAJAX(\''.$_SERVER['PHP_SELF'].'?'.$_POST['lastQueryStr'].'\');</script>';
     }
     exit();
@@ -203,20 +231,20 @@ if (isset($_POST['saveData']) AND $can_read AND $can_write) {
 if (!$in_pop_up) {
 /* search form */
 ?>
-<div class="menuBox">
+<fieldset class="menuBox">
 <div class="menuBoxInner itemIcon">
 	<div class="per_title">
     	<h2><?php echo __('Items'); ?></h2>
 	</div>
 	<div class="sub_section">
-	    <form name="search" action="<?php echo MWB; ?>bibliography/item.php" id="search" method="get"  class="form-inline"><?php echo __('Search'); ?>
-		    <input type="text" name="keywords" id="keywords" size="30" class="form-control col-md-3" />
-		    <select name="searchby" class="form-control col-md-2"><option value="item">Item</option><option value="others"><?php echo __('Others'); ?> </option></select>
-		    <input type="submit" id="doSearch" value="<?php echo __('Search'); ?>" class="s-btn btn btn-default" />
+	    <form name="search" action="<?php echo MWB; ?>bibliography/item.php" id="search" method="get" style="display: inline;"><?php echo __('Search'); ?> :
+		    <input type="text" name="keywords" id="keywords" size="30" />
+		    <select name="searchby"><option value="item">Item</option><option value="others"><?php echo __('Others'); ?> </option></select>
+		    <input type="submit" id="doSearch" value="<?php echo __('Search'); ?>" class="btn btn-default" />
 	    </form>
     </div>
 </div>
-</div>
+</fieldset>
 <?php
 /* search form end */
 }
@@ -236,11 +264,11 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $rec_d = $rec_q->fetch_assoc();
 
     // create new instance
-    $form = new simbio_form_table_AJAX('itemForm', $_SERVER['PHP_SELF'].'?'.$_SERVER['QUERY_STRING'], 'post');
-    $form->submit_button_attr = 'name="saveData" value="'.__('Save').'" class="s-btn btn btn-default"';
+    $form = new simbio_form_table_AJAX('mainForm', $_SERVER['PHP_SELF'].'?'.$_SERVER['QUERY_STRING'], 'post');
+    $form->submit_button_attr = 'name="saveData" value="'.__('Save').'" class="btn btn-default"';
     // form table attributes
-    $form->table_attr = 'id="dataList" class="s-table table"';
-    $form->table_header_attr = 'class="alterCell font-weight-bold"';
+    $form->table_attr = 'align="center" id="dataList" cellpadding="5" cellspacing="0"';
+    $form->table_header_attr = 'class="alterCell" style="font-weight: bold;"';
     $form->table_content_attr = 'class="alterCell2"';
 
     // edit mode flag set
@@ -282,23 +310,34 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     // title
     if (!$in_pop_up) {
       $str_input = $b_title;
-      $str_input .= '<div class="makeHidden"><a class="s-btn btn btn-default notAJAX openPopUp" href="'.MWB.'bibliography/pop_biblio.php?inPopUp=true&action=detail&itemID='.($rec_d['biblio_id']??'').'&itemCollID='.($rec_d['item_id']??'').'" width="750" height="500" title="'.__('Edit Biblographic data').'">'.__('Edit Biblographic data').'</a></div>';
+      $str_input .= '<div class="makeHidden"><a class="notAJAX button btn btn-primary openPopUp" href="'.MWB.'bibliography/pop_biblio.php?inPopUp=true&action=detail&itemID='.$rec_d['biblio_id'].'&itemCollID='.$rec_d['item_id'].'" width="650" height="500" title="'.__('Edit Biblographic data').'">'.__('Edit Biblographic data').'</a></div>';
     } else { $str_input = $b_title; }
     $form->addAnything(__('Title'), $str_input);
     $form->addHidden('biblioTitle', $b_title);
     $form->addHidden('biblioID', $b_id);
-    // item code
-    $str_input  = '<div class="container">';
-    $str_input .= '<div class="row">';
-    $str_input .= simbio_form_element::textField('text', 'itemCode', $rec_d['item_code']??'', 'onblur="ajaxCheckID(\''.SWB.'admin/AJAX_check_id.php\', \'item\', \'item_code\', \'msgBox\', \'itemCode\')" style="width: 50%;" class="form-control col-5"');
-    $str_input .= '<span id="msgBox" class="col p-2"></span>';
-    $str_input .= '</div>';
-    $str_input .= '</div>';
+
+    // get last item code
+	if (!$form->edit_mode) {    
+    $lastItem_q = $dbs->query("SELECT item_code FROM item ORDER BY item_id DESC LIMIT 0,1");
+    $last_item = $lastItem_q->fetch_row();
+    $str_input = $last_item[0];
+    $form->addAnything(__('Last Item Code'), $str_input);
+	$count_options[] = array('1', __('Yes'));
+	$form->addCheckBox('count_items',__('Allow generate count item on call number'),$count_options,'0');    
+	}
+
+    //item code
+    $str_input = '<div class="wrp">';
+    $str_input .= '<div id="more"><div style="display:flex;"><input id="itemCode-0" class="itemCode" type="text" name="itemCode[]" value="'.$rec_d['item_code'].'" onblur="ajaxCheckID(\''.SWB.'admin/AJAX_check_id.php\', \'item\', \'item_code\', \'msgBox\', \'itemCode-0\')" style="width: 40%;" placeholder="'.__('Item Code').'"><input type="text" name="inventoryCode[]" style="width: 60%;" placeholder="'.__('Inventory Code').'" value="'.$rec_d['inventory_code'].'"/></div>';
+    $str_input .= '</div><div id="more"></div>';
+    $str_input .= $rec_d['item_code']==''?'<button class="add_field_button btn btn-primary" id="more">Add More Items</button></div>':'';
+    $str_input .= '<span id="msgBox">&nbsp;</span>';
     $form->addAnything(__('Item Code'), $str_input);
+
     // call number
-    $form->addTextField('text', 'callNumber', __('Call Number'), $rec_d['call_number']??$def_call_number, 'style="width: 50%;" class="form-control"');
+    $form->addTextField('text', 'callNumber', __('Call Number'), isset($rec_d['call_number'])?$rec_d['call_number']:$def_call_number, 'style="width: 40%;"');
     // inventory code
-    $form->addTextField('text', 'inventoryCode', __('Inventory Code'), $rec_d['inventory_code']??'', 'style="width: 50%;" class="form-control"');
+    //$form->addTextField('text', 'inventoryCode', __('Inventory Code'), $rec_d['inventory_code'], 'style="width: 100%;"');
     // item location
         // get location data related to this record from database
         $location_q = $dbs->query("SELECT location_id, location_name FROM mst_location");
@@ -306,9 +345,9 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         while ($location_d = $location_q->fetch_row()) {
             $location_options[] = array($location_d[0], $location_d[1]);
         }
-    $form->addSelectList('locationID', __('Location'), $location_options, $rec_d['location_id']??'','style="width: 50%" class="form-control"');
+    $form->addSelectList('locationID', __('Location'), $location_options, $rec_d['location_id']);
     // item site
-    $form->addTextField('text', 'itemSite', __('Shelf Location'), $rec_d['site']??'', 'style="width: 50%;" class="form-control"');
+    $form->addTextField('text', 'itemSite', __('Shelf Location'), $rec_d['site'], 'style="width: 40%;"');
     // collection type
         // get collection type data related to this record from database
         $coll_type_q = $dbs->query("SELECT coll_type_id, coll_type_name FROM mst_coll_type");
@@ -316,7 +355,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         while ($coll_type_d = $coll_type_q->fetch_row()) {
             $coll_type_options[] = array($coll_type_d[0], $coll_type_d[1]);
         }
-    $form->addSelectList('collTypeID', __('Collection Type'), $coll_type_options, $rec_d['coll_type_id']??'','style="width: 40%" class="form-control"');
+    $form->addSelectList('collTypeID', __('Collection Type'), $coll_type_options, $rec_d['coll_type_id']);
     // item status
         // get item status data from database
         $item_status_q = $dbs->query("SELECT item_status_id, item_status_name FROM mst_item_status");
@@ -324,13 +363,13 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         while ($item_status_d = $item_status_q->fetch_row()) {
             $item_status_options[] = array($item_status_d[0], $item_status_d[1]);
         }
-    $form->addSelectList('itemStatusID', __('Item Status'), $item_status_options, $rec_d['item_status_id']??'','style="width:40%" class="form-control"');
+    $form->addSelectList('itemStatusID', __('Item Status'), $item_status_options, $rec_d['item_status_id']);
     // order number
-    $form->addTextField('text', 'orderNo', __('Order Number'), $rec_d['order_no']??'', 'style="width: 40%;" class="form-control"');
+    $form->addTextField('text', 'orderNo', __('Order Number'), $rec_d['order_no'], 'style="width: 40%;"');
     // order date
-    $form->addDateField('ordDate', __('Order Date'), $rec_d['order_date']??date('Y-m-d'), 'class="form-control"');
+    $form->addDateField('ordDate', __('Order Date'), $rec_d['order_date']?$rec_d['order_date']:date('Y-m-d'));
     // received date
-    $form->addDateField('recvDate', __('Receiving Date'), $rec_d['received_date']??date('Y-m-d'),'class="form-control"');
+    $form->addDateField('recvDate', __('Receiving Date'), $rec_d['received_date']?$rec_d['received_date']:date('Y-m-d'));
     // item supplier
         // get item status data from database
         $supplier_q = $dbs->query("SELECT supplier_id, supplier_name FROM mst_supplier");
@@ -338,28 +377,24 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
         while ($supplier_d = $supplier_q->fetch_row()) {
             $supplier_options[] = array($supplier_d[0], $supplier_d[1]);
         }
-    $form->addSelectList('supplierID', __('Supplier'), $supplier_options, $rec_d['supplier_id']??'','class="form-control"');
+    $form->addSelectList('supplierID', __('Supplier'), $supplier_options, $rec_d['supplier_id']);
     // item source
         $source_options[] = array('1', __('Buy'));
         $source_options[] = array('2', __('Prize/Grant'));
     $form->addRadio('source', __('Source'), $source_options, !empty($rec_d['source'])?$rec_d['source']:'1');
     // item invoice
-    $form->addTextField('text', 'invoice', __('Invoice'), $rec_d['invoice']??'', 'style="width: 100%;" class="form-control"');
+    $form->addTextField('text', 'invoice', __('Invoice'), $rec_d['invoice'], 'style="width: 100%;"');
     // invoice date
-    $form->addDateField('invcDate', __('Invoice Date'), $rec_d['invoice_date']??date('Y-m-d'),'class="form-control"');
+    $form->addDateField('invcDate', __('Invoice Date'), $rec_d['invoice_date']?$rec_d['invoice_date']:date('Y-m-d'));
     // price
-    $str_input  = '<div class="container">';
-    $str_input .= '<div class="row">';
-    $str_input .= simbio_form_element::textField('text', 'price', !empty($rec_d['price'])?$rec_d['price']:'0', 'style="width: 40%;" class="form-control col-4"');
-    $str_input .= simbio_form_element::selectList('priceCurrency', $sysconf['currencies'], $rec_d['price_currency']??'','style="width: 10%;" class="form-control col-2"');
-    $str_input .= '</div>';
-    $str_input .= '</div>';
+    $str_input = simbio_form_element::textField('text', 'price', !empty($rec_d['price'])?$rec_d['price']:'0', 'style="width: 40%;"');
+    $str_input .= simbio_form_element::selectList('priceCurrency', $sysconf['currencies'], $rec_d['price_currency']);;
     $form->addAnything(__('Price'), $str_input);
 
     // edit mode messagge
     if ($form->edit_mode) {
-        echo '<div class="s-alert infoBox">'.__('You are going to edit Item data').': <b>'.$rec_d['title'].'</b> ' //mfc
-            .'<br />'.__('Last Updated').'&nbsp;'.date('d F Y h:i:s',strtotime($rec_d['last_update']));
+        echo '<div class="infoBox">'.__('You are going to edit Item data').': <b>'.$rec_d['title'].'</b> ' //mfc
+            .'<br />'.__('Last Updated').'&nbsp;'.$rec_d['last_update'];
         echo '</div>'."\n";
     }
     // print out the form object
@@ -407,6 +442,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
                 'ct.coll_type_name AS \''.__('Collection Type').'\'',
                 'loc.location_name AS \''.__('Location').'\'',
                 'biblio.classification AS \''.__('Classification').'\'',
+                'item.call_number AS \''.__('Call Number').'\'',                
                 'item.last_update AS \''.__('Last Updated').'\'');
             $datagrid->modifyColumnContent(2, 'callback{showTitleAuthors}');
             $title_field_idx = 2;
@@ -416,6 +452,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
                 'ct.coll_type_name AS \''.__('Collection Type').'\'',
                 'loc.location_name AS \''.__('Location').'\'',
                 'biblio.classification AS \''.__('Classification').'\'',
+                'item.call_number AS \''.__('Call Number').'\'',                
                 'item.last_update AS \''.__('Last Updated').'\'');
             $datagrid->modifyColumnContent(1, 'callback{showTitleAuthors}');
         }
@@ -472,7 +509,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
 
     // is there any search
     if (isset($_GET['keywords']) && $_GET['keywords']) {
-        $keywords = utility::filterData('keywords', 'get', true, true, true);
+        $keywords = $dbs->escape_string(trim($_GET['keywords']));
         $searchable_fields = array('title', 'author', 'subject', 'itemcode');
         $search_str = '';
         // if no qualifier in fields
@@ -491,7 +528,7 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     }
 
     // set table and table header attributes
-    $datagrid->table_attr = 'id="dataList" class="s-table table"';
+    $datagrid->table_attr = 'align="center" id="dataList" cellpadding="5" cellspacing="0"';
     $datagrid->table_header_attr = 'class="dataListHeader" style="font-weight: bold;"';
     // set delete proccess URL
     $datagrid->chbox_form_URL = $_SERVER['PHP_SELF'];
@@ -500,9 +537,35 @@ if (isset($_POST['detail']) OR (isset($_GET['action']) AND $_GET['action'] == 'd
     $datagrid_result = $datagrid->createDataGrid($dbs, $table_spec, 20, ($can_read AND $can_write));
     if (isset($_GET['keywords']) AND $_GET['keywords']) {
         $msg = str_replace('{result->num_rows}', $datagrid->num_rows, __('Found <strong>{result->num_rows}</strong> from your keywords')); //mfc
-        echo '<div class="infoBox">'.$msg.' : '.htmlspecialchars($_GET['keywords']).'<div>'.__('Query took').' <b>'.$datagrid->query_time.'</b> '.__('second(s) to complete').'</div></div>'; //mfc
+        echo '<div class="infoBox">'.$msg.' : '.$_GET['keywords'].'<div>'.__('Query took').' <b>'.$datagrid->query_time.'</b> '.__('second(s) to complete').'</div></div>'; //mfc
     }
 
     echo $datagrid_result;
 }
 /* main content end */
+?>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    var x = 0; 
+    $(".add_field_button").click(function(e){ 
+        e.preventDefault();
+        x = x+1;
+        $("#more").append('<div style="display:flex;"><input type="text" class="itemCode" id="itemCode-'+x+'" name="itemCode[]" width="50%" onblur="ajaxCheckID(\'<?php echo SWB; ?>admin/AJAX_check_id.php\', \'item\', \'item_code\', \'msgBox\', \'itemCode-'+x+'\')" style="width: 40%;" placeholder="<?php echo __('Item Code'); ?>"/><input type="text" name="inventoryCode[]" placeholder="<?php echo __('Inventory Code'); ?>"/><a href="#" class="remove_field btn btn-default">Remove</a></div>');
+    });
+   
+    $(".wrp").on("click",".remove_field", function(e){ 
+        e.preventDefault(); $(this).parent('div').remove(); x--;
+    })
+});
+
+$('.wrp').on("blur","input", function(e){ 
+    var inputs = $('.wrp input[class=itemCode]');
+	inputs.filter(function(i,el){
+		return inputs.not(this).filter(function() {
+		    return this.value === el.value;
+		}).length !== 0;
+	}).css("background-color", "red");
+});
+
+</script>
