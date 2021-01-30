@@ -80,6 +80,14 @@ if (!$reportView) {
                         </div>
                     </div>
                     <div class="divRow">
+                        <div class="divRowLabel"><?php echo __('Institution'); ?></div>
+                        <div class="divRowContent">
+                          <?php
+                            echo simbio_form_element::textField('text', 'inst_name', '', 'class="form-control" style="width: 50%"');
+                                ?>
+                        </div>
+                    </div>
+                    <div class="divRow">
                         <div class="divRowLabel"><?php echo __('Loan Date From'); ?></div>
                         <div class="divRowContent">
                           <?php
@@ -144,6 +152,10 @@ echo simbio_form_element::dateField('untilDate', date('Y-m-d'),'class="form-cont
             $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%'";
         }
     }
+    if (isset($_GET['inst_name']) AND !empty($_GET['inst_name'])) {
+        $institution = $dbs->escape_string(trim($_GET['inst_name']));
+        $overdue_criteria .= ' AND m.inst_name LIKE \'%'.$institution.'%\'';
+    }
     // loan date
     if (isset($_GET['startDate']) and isset($_GET['untilDate'])) {
         $date_criteria = ' AND (TO_DAYS(l.loan_date) BETWEEN TO_DAYS(\'' . $_GET['startDate'] . '\') AND
@@ -172,7 +184,7 @@ echo simbio_form_element::dateField('untilDate', date('Y-m-d'),'class="form-cont
         $circulation->holiday_date = $_SESSION['holiday_date'];
 
         // member name
-        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, member_mail_address FROM member WHERE member_id=\'' . $array_data[0] . '\'');
+        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, member_mail_address, inst_name FROM member WHERE member_id=\'' . $array_data[0] . '\'');
         $member_d = $member_q->fetch_row();
         $member_name = $member_d[0];
         $member_mail_address = $member_d[3];
@@ -185,7 +197,7 @@ echo simbio_form_element::dateField('untilDate', date('Y-m-d'),'class="form-cont
               LEFT JOIN item AS i ON l.item_code=i.item_code
               LEFT JOIN biblio AS b ON i.biblio_id=b.biblio_id
           WHERE (l.is_lent=1 AND l.is_return=0 AND TO_DAYS(due_date) < TO_DAYS(\'' . date('Y-m-d') . '\')) AND l.member_id=\'' . $array_data[0] . '\'' . (!empty($date_criteria) ? $date_criteria : ''));
-        $_buffer = '<div style="font-weight: bold; color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_name . ' (' . $array_data[0] . ')</div>';
+        $_buffer = '<div style="font-weight: bold; color: black; font-size: 10pt; margin-bottom: 3px;">' . $array_data[0] . ' - ' . $member_name . ' - '  . $member_d[4]. '</div>';
         $_buffer .= '<div style="color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_mail_address . '</div>';
         $_buffer .= '<div style="font-size: 10pt; margin-bottom: 3px;"><div id="' . $array_data[0] . 'emailStatus"></div>' . __('E-mail') . ': <a href="mailto:' . $member_d[1] . '">' . $member_d[1] . '</a> - <a class="usingAJAX" href="' . MWB . 'membership/overdue_mail.php' . '" postdata="memberID=' . $array_data[0] . '" loadcontainer="' . $array_data[0] . 'emailStatus">' . __('Send Notification e-mail') . '</a> - ' . __('Phone Number') . ': ' . $member_d[2] . '</div>';
         $_buffer .= '<table width="100%" cellspacing="0">';

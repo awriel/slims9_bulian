@@ -68,7 +68,7 @@ if (!$reportView) {
     <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
         <div id="filterForm">
             <div class="form-group divRow">
-                <label><?php echo __('Member ID').'/'.__('Member Name'); ?></label>
+                <label><?php echo __('Member ID').' / '.__('Member Name').' / '.__('Institution'); ?></label>
                 <?php
                 echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control col-4"');
                 ?>
@@ -108,14 +108,14 @@ if (!$reportView) {
         if (count($words) > 1) {
             $concat_sql = ' (';
             foreach ($words as $word) {
-                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%') AND";
+                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%' OR m.inst_name LIKE '%$word%') AND";
             }
             // remove the last AND
             $concat_sql = substr_replace($concat_sql, '', -3);
             $concat_sql .= ') ';
             $overdue_criteria .= ' AND '.$concat_sql;
         } else {
-            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%'";
+            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%' OR m.inst_name LIKE '%$keyword%'";
         }
     }
     if (isset($_GET['recsEachPage'])) {
@@ -135,7 +135,7 @@ if (!$reportView) {
         global $date_criteria;
 
         // member name
-        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, member_mail_address FROM member WHERE member_id=\''.$array_data[0].'\'');
+        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, member_mail_address, inst_name FROM member WHERE member_id=\''.$array_data[0].'\'');
         $member_d = $member_q->fetch_row();
         $member_name = $member_d[0];
         $member_mail_address = $member_d[3];
@@ -147,7 +147,7 @@ if (!$reportView) {
                 LEFT JOIN item AS i ON l.item_code=i.item_code
                 LEFT JOIN biblio AS b ON i.biblio_id=b.biblio_id
             WHERE (l.is_lent=1 AND l.is_return=0 AND ( (TO_DAYS(due_date)-TO_DAYS(\''.date('Y-m-d').'\')) BETWEEN 0 AND 3) AND l.member_id=\''.$array_data[0].'\')');
-        $_buffer = '<div class="font-weight-bold">'.$member_name.' ('.$array_data[0].')';
+        $_buffer = '<div class="font-weight-bold">'. $array_data[0] . ' - ' . $member_name . ' - '  . $member_d[4];
         $_buffer .= '<div>'.$member_mail_address;
         $_buffer .= __('E-mail').': <a href="mailto:'.$member_d[1].'">'.$member_d[1].'</a> - '.__('Phone Number').': '.$member_d[2].'</div></div>';
         $_buffer .= '<table width="100%" cellspacing="0">';
