@@ -68,7 +68,7 @@ if (!$reportView) {
     $output .= '<tr>'.$second_header.$detail_class_coll.'</tr>';
 
     // get year data from databse
-    $_q = $dbs->query("SELECT YEAR(input_date) AS YEAR FROM item GROUP BY YEAR(input_date)");
+    $_q = $dbs->query("SELECT YEAR(received_date) AS YEAR FROM item GROUP BY YEAR(received_date)");
 
     if($_q->num_rows >0){
         while ($_d = $_q->fetch_row()) {
@@ -90,7 +90,7 @@ if (!$reportView) {
                 $_q = $dbs->query("SELECT i.item_code,i.biblio_id 
                     FROM item i LEFT JOIN biblio b ON b.biblio_id=i.biblio_id 
                     WHERE  b.title IS NOT NULL 
-                    AND ".$classes.($year == __('ALL')? '': ' AND YEAR(i.input_date)  = '.$year));
+                    AND ".$classes.($year == __('ALL')? '': ' AND YEAR(i.received_date)  = '.$year));
 
                 $dataset[$year]['title'][$class_name] = 0;
                 $dataset[$year]['item'][$class_name] = 0;

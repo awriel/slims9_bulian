@@ -111,7 +111,7 @@ LEFT JOIN mst_publisher mp ON mp.publisher_id=b.publisher_id
 LEFT JOIN mst_gmd mg ON mg.gmd_id=b.gmd_id
 LEFT JOIN mst_language mlang ON  mlang.language_id=b.language_id
 LEFT JOIN mst_place mpl ON mpl.place_id=b.publish_place_id';
-$criteria = " YEAR(i.input_date) LIKE '".($filter==__('ALL')?'%%':$filter)."'";
+$criteria = " YEAR(i.received_date) LIKE '".($filter==__('ALL')?'%%':$filter)."'";
 // create datagrid
 $datagrid = new simbio_datagrid();
 $datagrid->setSQLColumn(
@@ -119,8 +119,8 @@ $datagrid->setSQLColumn(
     'b.title AS  \''.__('Title').'\'',     
     'b.classification AS \''.__('Classification').'\'',    
     'mct.coll_type_name AS \''.__('Collection Type').'\'', 
-    'i.input_date AS \''.__('Input Date').'\'');
-$datagrid->setSQLorder('i.input_date DESC');
+    'i.received_date AS \''.__('Input Date').'\'');
+$datagrid->setSQLorder('i.received_date DESC');
 
 // is there any search
 if (isset($_GET['keywords']) AND $_GET['keywords']) {
@@ -166,7 +166,7 @@ $xlsquery = 'SELECT i.item_code AS \''.__('Item Code').'\''.
     ',i.site AS \''.__('Self Location').'\''.
     ',ml.location_name AS \''.__('Location').'\''. 
     ',i.price AS \''.__('Price').'\''.
-    ',i.input_date AS \''.__('Input Date').'\''.
+    ',i.received_date AS \''.__('Input Date').'\''.
     ' FROM '.$table_spec.' WHERE '.$criteria;
 
 unset($_SESSION['xlsdata']);
