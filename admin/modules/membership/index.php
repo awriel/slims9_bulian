@@ -723,14 +723,16 @@ $(document).ready(function() {
         $datagrid->setSQLColumn('m.member_id',
             'm.member_id AS \''.__('Member ID').'\'',
             'm.member_name AS \''.__('Member Name').'\'',
-            'mt.member_type_name AS \''.__('Membership Type').'\'',
+            'm.inst_name AS \''.__('Institution').'\'',
+            //'mt.member_type_name AS \''.__('Membership Type').'\'',
             'm.member_email AS \''.__('E-mail').'\'',
             'm.last_update AS \''.__('Last Updated').'\'');
         $datagrid->modifyColumnContent(2, 'callback{showMemberImage}');
     } else {
         $datagrid->setSQLColumn('m.member_id AS \''.__('Member ID').'\'',
             'm.member_name AS \''.__('Member Name').'\'',
-            'mt.member_type_name AS \''.__('Membership Type').'\'',
+            'm.inst_name AS \''.__('Institution').'\'',
+            //'mt.member_type_name AS \''.__('Membership Type').'\'',
             'm.member_email AS \''.__('E-mail').'\'',
             'm.last_update AS \''.__('Last Updated').'\'');
             $datagrid->modifyColumnContent(1, 'callback{showMemberImage}');
@@ -741,7 +743,7 @@ $(document).ready(function() {
     $criteria = 'm.member_id IS NOT NULL ';
     if (isset($_GET['keywords']) AND $_GET['keywords']) {
         $keywords = $dbs->escape_string($_GET['keywords']);
-        $criteria .= " AND (m.member_name LIKE '%$keywords%' OR m.member_id LIKE '%$keywords%') ";
+        $criteria .= " AND (m.member_name LIKE '%$keywords%' OR m.member_id LIKE '%$keywords%' OR m.inst_name LIKE '%$keywords%') ";
     }
     if (isset($_GET['expire'])) {
         $criteria .= " AND TO_DAYS('".date('Y-m-d')."')>TO_DAYS(m.expire_date)";
