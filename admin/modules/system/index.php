@@ -405,7 +405,15 @@ $form->addAnything(__('Logo Image'), $str_input);
 // $form->addSelectList('admin_template', __('Admin Template'), $admin_tpl_options, $sysconf['admin_template']['theme']);
 
 // application language
-$form->addSelectList('default_lang', __('Default App. Language'), Memory::getInstance()->getLanguages(), $sysconf['default_lang'], 'class="form-control col-3"');
+
+$options = null;
+$languages = Memory::getInstance()->getLanguages();
+foreach ($languages as $lang) {
+    $flag = Memory::getFlag($lang[0]);
+    $displayText = trim($flag . ' ' . $lang[1]);
+    $options[] = array($lang[0], $displayText);
+}
+$form->addSelectList('default_lang', __('Default App. Language'), $options, $sysconf['default_lang'], 'class="form-control col-3"');
 
 // timezone
 $html  = '<input type="text" class="form-control col-2" name="timezone" value="' . ($sysconf['timezone'] ?? 'Asia/Jakarta') . '"/>';
@@ -495,7 +503,8 @@ $options = null;
 $options[] = array('0', __('Disable'));
 $options[] = array('1', __('Enable'));
 $form->addSelectList('enable_counter_by_ip', __('Visitor Counter by IP'), $options, $sysconf['enable_counter_by_ip']?'1':'0','class="form-control col-3"');
-$form->addTextField('textarea', 'allowed_counter_ip', __('Allowed Counter IP'), implode('; ', $sysconf['allowed_counter_ip']), 'style="width: 100%;" class="form-control"', __('Separate ip with ;'));
+$ip_value = is_array($sysconf['allowed_counter_ip']) ? $sysconf['allowed_counter_ip'] : [];
+$form->addTextField('textarea','allowed_counter_ip', __('Allowed Counter IP'), implode('; ', $ip_value),'style="width: 100%;" class="form-control"', __('Separate ip with ;'));
 
 $form->addSelectList('enable_visitor_limitation', __('Visitor Limitation by Time'), $options, $sysconf['enable_visitor_limitation']?'1':'0','class="form-control col-3"');
 
