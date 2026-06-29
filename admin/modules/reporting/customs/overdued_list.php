@@ -75,7 +75,7 @@ if (!$reportView) {
                 <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
                     <div id="filterForm">
                         <div class="divRow">
-                            <div class="divRowLabel"><?php echo __('Member ID') . '/' . __('Member Name'); ?></div>
+                            <div class="divRowLabel"><?php echo __('Member ID') . '/' . __('Member Name') . '/' . __('Institution'); ?></div>
                             <div class="divRowContent">
                                 <?php
                                 echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control" style="width: 50%"');
@@ -144,14 +144,14 @@ if (!$reportView) {
         if (count($words) > 1) {
             $concat_sql = ' (';
             foreach ($words as $word) {
-                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%') AND";
+                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%' OR m.inst_name LIKE '%$word%') AND";
             }
             // remove the last AND
             $concat_sql = substr_replace($concat_sql, '', -3);
             $concat_sql .= ') ';
             $overdue_criteria .= ' AND ' . $concat_sql;
         } else {
-            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%'";
+            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%' OR m.inst_name LIKE '%$keyword%'";
         }
     }
     // loan date
@@ -182,13 +182,16 @@ if (!$reportView) {
         $circulation->holiday_date = $_SESSION['holiday_date'];
 
         // member name
-        $member_q = $obj_db->query('SELECT m.member_name, m.member_email, m.member_phone, m.member_mail_address, mmt.fine_each_day 
+        $member_q = $obj_db->query('SELECT m.member_name, m.member_email, m.member_phone, m.inst_name, mmt.fine_each_day 
                                            FROM member m 
                                            LEFT JOIN mst_member_type mmt on m.member_type_id = mmt.member_type_id
                                            WHERE m.member_id=\'' . $array_data[0] . '\'');
         $member_d = $member_q->fetch_row();
         $member_name = $member_d[0];
-        $member_mail_address = $member_d[3];
+        $member_email = $member_d[1];
+        $member_phone = $member_d[2];
+        $member_inst_name = $member_d[3];
+        //$member_inst_name = $member_d[3];
         unset($member_q);
 
         $ovd_title_q = $obj_db->query('SELECT l.loan_id, l.item_code, i.price, i.price_currency,
@@ -199,8 +202,8 @@ if (!$reportView) {
               LEFT JOIN biblio AS b ON i.biblio_id=b.biblio_id
               LEFT JOIN mst_loan_rules mlr on l.loan_rules_id = mlr.loan_rules_id
           WHERE (l.is_lent=1 AND l.is_return=0 AND TO_DAYS(due_date) < TO_DAYS(\'' . date('Y-m-d') . '\')) AND l.member_id=\'' . $array_data[0] . '\'' . (!empty($date_criteria) ? $date_criteria : ''));
-        $_buffer = '<div style="font-weight: bold; color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_name . ' (' . $array_data[0] . ')</div>';
-        $_buffer .= '<div style="color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_mail_address . '</div>';
+        $_buffer = '<div style="font-weight: bold; color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_name . ' (' . $array_data[0] . ') / Kelas: ' . $member_d[3] . '</div>';
+        //$_buffer .= '<div style="color: black; font-size: 10pt; margin-bottom: 3px;">' . $member_mail_address . '</div>';
         if (!empty($member_d[1])) $_buffer .= '<div style="font-size: 10pt; margin-bottom: 3px;"><div id="' . $array_data[0] . 'emailStatus"></div>' . __('E-mail') . ' : <a href="mailto:' . $member_d[1] . '">' . $member_d[1] . '</a> - <a class="usingAJAX btn btn-sm btn-outline-primary" href="' . MWB . 'membership/overdue_mail.php' . '" postdata="memberID=' . $array_data[0] . '" loadcontainer="' . $array_data[0] . 'emailStatus"><i class="fa fa-paper-plane-o"></i>&nbsp;' . __('Send Notification e-mail') . '</a> <br/>';
         $_buffer .= __('Phone Number') . ': ' . $member_d[2] . '</div>';
         $_buffer .= '<table width="100%" cellspacing="0">';

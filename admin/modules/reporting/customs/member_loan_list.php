@@ -187,7 +187,7 @@ if (!$reportView) {
         global $date_criteria;
 
         // member name
-        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone FROM member WHERE member_id=\'' . $array_data[0] . '\'');
+        $member_q = $obj_db->query('SELECT member_name, member_email, member_phone, inst_name FROM member WHERE member_id=\'' . $array_data[0] . '\'');
         $member_d = $member_q->fetch_row();
         $member_name = $member_d[0];
         unset($member_q);
@@ -198,7 +198,7 @@ if (!$reportView) {
                 LEFT JOIN item AS i ON l.item_code=i.item_code
                 LEFT JOIN biblio AS b ON i.biblio_id=b.biblio_id
             WHERE (l.is_lent=1 AND l.is_return=0) AND l.member_id=\'' . $array_data[0] . '\'' . (!empty($date_criteria) ? $date_criteria : ''));
-        $_buffer = '<div class="font-weight-bold">' . $member_name . ' (' . $array_data[0] . ')<br>';
+        $_buffer = '<div class="font-weight-bold">' . $member_name . ' (' . $array_data[0] . ') / Institusi: ' . $member_d[3] . '<br>';
         $_buffer .= '' . __('E-mail') . ': <a href="mailto:' . $member_d[1] . '">' . $member_d[1] . '</a> - ' . __('Phone Number') . ': ' . $member_d[2] . '</div>';
         $_buffer .= '<table width="100%" cellspacing="0">';
         while ($ovd_title_d = $ovd_title_q->fetch_assoc()) {
