@@ -72,7 +72,7 @@ if (!$reportView) {
                 <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
                     <div id="filterForm">
                         <div class="form-group divRow">
-                            <label><?php echo __('Member ID') . '/' . __('Member Name'); ?></label>
+                            <label><?php echo __('Member ID') . '/' . __('Member Name') .'/' . __('Institution'); ?></label>
                             <?php echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control col-4"'); ?>
                         </div>
                         <div class="form-group divRow">
@@ -161,31 +161,32 @@ if (!$reportView) {
 } else {
     ob_start();
     // table spec
-    $table_spec = 'loan_history';
+    $table_spec = 'loan_history AS lh 
+    LEFT JOIN member AS m ON lh.member_id=m.member_id';
 
     // create datagrid
     $reportgrid = new report_datagrid();
     $reportgrid->table_attr = 'class="s-table table table-sm table-bordered"';
 
     $reportgrid->setSQLColumn(
-        'member_id AS \'' . __('Member ID') . '\'',
-        'member_name AS \'' . __('Member Name') . '\'',
-        'member_type_name AS \'' . __('Membership Type') . '\'',
-        'item_code AS \'' . __('Item Code') . '\'',
-        'title AS \'' . __('Title') . '\'',
-        'loan_date AS \'' . __('Loan Date') . '\'',
-        'due_date AS \'' . __('Due Date') . '\'',
-        'is_return AS \'' . __('Loan Status') . '\'',
-        'loan_id',
-        'return_date',
-        'last_update AS \'' . __('Last Update') . '\''
+        'lh.member_id AS \'' . __('Member ID') . '\'',
+        'lh.member_name AS \'' . __('Member Name') . '\'',
+        'm.inst_name AS \'' . __('Institution') . '\'',//'member_type_name AS \'' . __('Membership Type') . '\'',
+        'lh.item_code AS \'' . __('Item Code') . '\'',
+        'lh.title AS \'' . __('Title') . '\'',
+        'lh.loan_date AS \'' . __('Loan Date') . '\'',
+        'lh.due_date AS \'' . __('Due Date') . '\'',
+        'lh.is_return AS \'' . __('Loan Status') . '\'',
+        'lh.loan_id',
+        'lh.return_date',
+        'lh.last_update AS \'' . __('Last Update') . '\''
     );
-    $reportgrid->setSQLorder('last_update DESC');
+    $reportgrid->setSQLorder('lh.last_update DESC');
 
-    $criteria = 'member_id IS NOT NULL ';
+    $criteria = 'lh.member_id IS NOT NULL ';
     if (isset($_GET['id_name']) and !empty($_GET['id_name'])) {
         $id_name = utility::filterData('id_name', 'get', true, true, true);
-        $criteria .= ' AND (member_id LIKE \'%' . $id_name . '%\' OR member_name LIKE \'%' . $id_name . '%\')';
+        $criteria .= ' AND (lh.member_id LIKE \'%' . $id_name . '%\' OR lh.member_name LIKE \'%' . $id_name . '%\' OR m.inst_name LIKE \'%' . $id_name . '%\')';
     }
     if (isset($_GET['title']) and !empty($_GET['title'])) {
         $keyword = utility::filterData('title', 'get', true, true, true);
