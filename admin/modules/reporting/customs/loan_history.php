@@ -275,12 +275,13 @@ if (!$reportView) {
     echo '<script type="text/javascript">' . "\n";
     echo 'parent.$(\'#pagingBox\').html(\'' . str_replace(array("\n", "\r", "\t"), '', $reportgrid->paging_set) . '\');' . "\n";
     echo '</script>';
-    $xlsquery = 'SELECT member_id AS \'' . __('Member ID') . '\'' .
-        ', member_name AS \'' . __('Member Name') . '\'' .
-        ', item_code AS \'' . __('Item Code') . '\'' .
-        ', title AS \'' . __('Title') . '\'' .
-        ', loan_date AS \'' . __('Loan Date') . '\'' .
-        ', due_date AS \'' . __('Due Date') . '\', is_return AS \'' . __('Loan Status') . '\'' .
+    $xlsquery = 'SELECT lh.member_id AS \'' . __('Member ID') . '\'' .
+        ', lh.member_name AS \'' . __('Member Name') . '\'' .
+        ', m.inst_name AS \'' . __('Institution') . '\'' .
+        ', lh.item_code AS \'' . __('Item Code') . '\'' .
+        ', lh.title AS \'' . __('Title') . '\'' .
+        ', lh.loan_date AS \'' . __('Loan Date') . '\'' .
+        ', lh.due_date AS \'' . __('Due Date') . '\', lh.is_return AS \'' . __('Loan Status') . '\'' .
         ' FROM ' . $table_spec . ' WHERE ' . $criteria;
 
     unset($_SESSION['xlsdata']);

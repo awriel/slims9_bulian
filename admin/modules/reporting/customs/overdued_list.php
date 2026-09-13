@@ -75,7 +75,7 @@ if (!$reportView) {
                 <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
                     <div id="filterForm">
                         <div class="divRow">
-                            <div class="divRowLabel"><?php echo __('Member ID') . '/' . __('Member Name'); ?></div>
+                            <div class="divRowLabel"><?php echo __('Member ID') . '/' . __('Member Name') . '/' . __('Institution'); ?></div>
                             <div class="divRowContent">
                                 <?php
                                 echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control" style="width: 50%"');
@@ -144,7 +144,7 @@ if (!$reportView) {
         if (count($words) > 1) {
             $concat_sql = ' (';
             foreach ($words as $word) {
-                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%') AND";
+                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%' OR m.inst_name LIKE '%$word%') AND";
             }
             // remove the last AND
             $concat_sql = substr_replace($concat_sql, '', -3);

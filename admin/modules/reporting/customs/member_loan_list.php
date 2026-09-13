@@ -72,7 +72,7 @@ if (!$reportView) {
                 <form method="get" action="<?php echo $_SERVER['PHP_SELF']; ?>" target="reportView">
                     <div id="filterForm">
                         <div class="form-group divRow">
-                            <label><?php echo __('Member ID') . '/' . __('Member Name'); ?></label>
+                            <label><?php echo __('Member ID') . '/' . __('Member Name') . '/' . __('Institution'); ?></label>
                             <?php echo simbio_form_element::textField('text', 'id_name', '', 'class="form-control col-4"'); ?>
                         </div>
 
@@ -148,14 +148,14 @@ if (!$reportView) {
         if (count($words) > 1) {
             $concat_sql = ' (';
             foreach ($words as $word) {
-                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%') AND";
+                $concat_sql .= " (m.member_id LIKE '%$word%' OR m.member_name LIKE '%$word%' OR m.inst_name LIKE '%$word%') AND";
             }
             // remove the last AND
             $concat_sql = substr_replace($concat_sql, '', -3);
             $concat_sql .= ') ';
             $overdue_criteria .= ' AND ' . $concat_sql;
         } else {
-            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%'";
+            $overdue_criteria .= " AND m.member_id LIKE '%$keyword%' OR m.member_name LIKE '%$keyword%' OR m.inst_name LIKE '%$keyword%'";
         }
     }
     // loan date
